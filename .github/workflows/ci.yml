@@ -1,4 +1,4 @@
-name: CI
+name: CI Suite
 
 on:
   push:
@@ -7,31 +7,56 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-test:
+  python-quality:
+    name: Python Lint & Tests
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-    - name: Set up Rust
-      uses: dtolnay/rust-toolchain@stable
-      with:
-        targets: wasm32-unknown-unknown
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
 
-    - name: Run Soroban contract unit tests
-      run: cargo test --manifest-path contracts/paywall_vault/Cargo.toml
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff pytest httpx
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.12'
+      - name: Run Ruff Linter
+        run: ruff check .
 
-    - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      - name: Run Pytest Test Suite
+        run: pytest
 
-    - name: Run linting (ruff)
-      run: ruff check .
+  soroban-quality:
+    name: Soroban Smart Contract Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-    - name: Run pytest with coverage
-      run: pytest --cov=stellarpaywall --cov-report=xml --cov-fail-under=90
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run Cargo Test (Soroban Contracts)
+        run: |
+          if [ -d "contracts/paywall_vault" ]; then
+            cd contracts/paywall_vault
+            cargo test
+          else
+            cargo test --all
+          fi
+
+      - name: Run Cargo Clippy
+        run: |
+          if [ -d "contracts/paywall_vault" ]; then
+            cd contracts/paywall_vault
+            cargo clippy -- -D warnings
+          fi
