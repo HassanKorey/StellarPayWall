@@ -1,6 +1,7 @@
 fastapi
 uvicorn
 aiohttp
+httpx
 pydantic>=2.0
 stellar-sdk
 redis
@@ -9,6 +10,8 @@ alembic
 asyncpg
 pytest
 pytest-asyncio
+pytest-cov
 tenacity
 ruff
 mypy
+requests
