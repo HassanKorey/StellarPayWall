@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: stellar
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: stellarpaywall
+    ports:
+      - "5432:5432"
+  redis:
+    image: redis:7.0
+    ports:
+      - "6379:6379"

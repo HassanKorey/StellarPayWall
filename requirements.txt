@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+aiohttp
+pydantic>=2.0
+stellar-sdk
+redis
+sqlalchemy[asyncio]
+alembic
+asyncpg
+pytest
+pytest-asyncio
+tenacity
+ruff
+mypy
