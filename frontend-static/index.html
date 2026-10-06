@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StellarPayWall | Merchant Dashboard</title>
+  <meta name="description" content="HTTP 402 Stellar Micropayment Gateway — Merchant Analytics Portal" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue-50: #eff6ff; --blue-100: #dbeafe; --blue-200: #bfdbfe;
+      --blue-600: #2563eb; --blue-700: #1d4ed8; --blue-900: #1e3a8a;
+      --emerald-50: #ecfdf5; --emerald-100: #d1fae5; --emerald-200: #a7f3d0;
+      --emerald-600: #059669; --emerald-700: #047857;
+      --violet-50: #f5f3ff; --violet-100: #ede9fe; --violet-200: #ddd6fe;
+      --violet-600: #7c3aed;
+      --amber-50: #fffbeb; --amber-100: #fef3c7; --amber-200: #fde68a;
+      --amber-600: #d97706;
+      --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+      --gray-400: #9ca3af; --gray-500: #6b7280; --gray-600: #4b5563;
+      --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+      --green-100: #dcfce7; --green-600: #16a34a; --green-700: #15803d;
+      --red-100: #fee2e2; --red-600: #dc2626;
+      --white: #ffffff;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+      --radius: 1rem;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-900);
+      min-height: 100vh;
+    }
+
+    /* ── NAV ── */
+    nav {
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-200);
+      padding: 0 2rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .nav-brand { display: flex; align-items: center; gap: 0.65rem; }
+    .nav-logo {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 1.1rem; font-weight: 800;
+    }
+    .nav-title { font-size: 1.1rem; font-weight: 800; color: var(--gray-900); }
+    .nav-badge {
+      font-size: 0.7rem; font-weight: 600; color: var(--blue-600);
+      background: var(--blue-50); border: 1px solid var(--blue-200);
+      padding: 0.2rem 0.6rem; border-radius: 999px;
+    }
+    .nav-status { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: var(--gray-500); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:.4; } }
+
+    /* ── LAYOUT ── */
+    main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* ── PAGE HEADER ── */
+    .page-header { margin-bottom: 2rem; }
+    .page-header h1 { font-size: 1.5rem; font-weight: 800; color: var(--gray-900); }
+    .page-header p { font-size: 0.875rem; color: var(--gray-500); margin-top: 0.25rem; }
+
+    /* ── STATS ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      border: 1px solid transparent;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .stat-card.blue  { background: var(--blue-50);    border-color: var(--blue-200);    color: var(--blue-900); }
+    .stat-card.green { background: var(--emerald-50); border-color: var(--emerald-200); color: var(--emerald-700); }
+    .stat-card.purple{ background: var(--violet-50);  border-color: var(--violet-200);  color: var(--violet-600); }
+    .stat-card.amber { background: var(--amber-50);   border-color: var(--amber-200);   color: var(--amber-600); }
+    .stat-label { font-size: 0.75rem; font-weight: 600; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.04em; }
+    .stat-value { font-size: 2rem; font-weight: 800; line-height: 1.2; margin: 0.4rem 0 0.25rem; }
+    .stat-sub   { font-size: 0.72rem; opacity: 0.65; }
+
+    /* ── CARD SHELL ── */
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--gray-200);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .card-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--gray-100);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-title { font-size: 1rem; font-weight: 700; color: var(--gray-800); }
+
+    /* ── BUTTON ── */
+    .btn-primary {
+      font-size: 0.8rem; font-weight: 600;
+      background: var(--blue-600); color: white;
+      border: none; border-radius: 8px;
+      padding: 0.45rem 1rem; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: var(--blue-700); }
+
+    /* ── TABLES ── */
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    thead th {
+      background: var(--gray-50);
+      color: var(--gray-500);
+      font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 0.75rem 1.5rem; text-align: left;
+    }
+    tbody tr { border-top: 1px solid var(--gray-100); transition: background 0.1s; }
+    tbody tr:hover { background: var(--gray-50); }
+    tbody td { padding: 0.85rem 1.5rem; color: var(--gray-700); }
+    td.mono   { font-family: monospace; font-size: 0.78rem; color: var(--gray-600); background: var(--gray-100); border-radius: 4px; padding: 2px 6px; }
+
+    /* ── BADGES ── */
+    .badge {
+      display: inline-block;
+      font-size: 0.68rem; font-weight: 700;
+      padding: 0.2rem 0.55rem; border-radius: 999px;
+    }
+    .badge-blue   { background: var(--blue-100);    color: var(--blue-700); }
+    .badge-green  { background: var(--emerald-100); color: var(--emerald-700); }
+    .badge-active { background: var(--green-100);   color: var(--green-700); }
+    .badge-inactive{ background: var(--gray-100);   color: var(--gray-500); }
+
+    /* ── COPY BUTTON ── */
+    .copy-btn {
+      font-size: 0.72rem; color: var(--blue-600); background: none;
+      border: none; cursor: pointer; padding: 0; margin-left: 6px;
+      transition: color 0.1s;
+    }
+    .copy-btn:hover { color: var(--blue-700); text-decoration: underline; }
+    .copy-btn.copied { color: var(--green-600); }
+
+    /* ── VERIFIED ── */
+    .verified { color: var(--green-600); font-weight: 700; font-size: 0.78rem; }
+
+    /* ── MINI CHART ── */
+    .chart-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
+    .chart-label { width: 120px; font-size: 0.78rem; color: var(--gray-600); }
+    .chart-bar-bg { flex: 1; height: 8px; background: var(--gray-100); border-radius: 999px; overflow: hidden; }
+    .chart-bar-fill { height: 100%; border-radius: 999px; transition: width 0.6s ease; }
+    .chart-val { width: 50px; text-align: right; font-size: 0.75rem; font-weight: 600; color: var(--gray-700); }
+    .chart-section { padding: 1.25rem 1.5rem; }
+
+    @media (max-width: 640px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      thead th, tbody td { padding: 0.65rem 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">✦</div>
+    <span class="nav-title">StellarPayWall</span>
+    <span class="nav-badge">v1.0</span>
+  </div>
+  <div class="nav-status">
+    <div class="status-dot"></div>
+    Gateway Online &nbsp;·&nbsp; Horizon RPC Connected
+  </div>
+</nav>
+
+<main>
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <h1>Merchant Dashboard</h1>
+    <p>HTTP 402 Micropayment Gateway · Real-time Revenue Analytics</p>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card blue">
+      <div class="stat-label">Total XLM Revenue</div>
+      <div class="stat-value">1,245.50</div>
+      <div class="stat-sub">▲ +12.4% this week</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">USDC Revenue (Soroban)</div>
+      <div class="stat-value">$850.00</div>
+      <div class="stat-sub">▲ +8.1% this week</div>
+    </div>
+    <div class="stat-card purple">
+      <div class="stat-label">Active API Keys</div>
+      <div class="stat-value">3</div>
+      <div class="stat-sub">1 inactive key</div>
+    </div>
+    <div class="stat-card amber">
+      <div class="stat-label">Total API Calls</div>
+      <div class="stat-value">7,914</div>
+      <div class="stat-sub">Across all endpoints</div>
+    </div>
+  </div>
+
+  <!-- ENDPOINT VOLUME CHART -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Endpoint Call Volume</span>
+    </div>
+    <div class="chart-section">
+      <div class="chart-row">
+        <span class="chart-label">/api/v1/generate</span>
+        <div class="chart-bar-bg"><div class="chart-bar-fill" style="width:85%; background:#2563eb;"></div></div>
+        <span class="chart-val">5,671</span>
+      </div>
+      <div class="chart-row">
+        <span class="chart-label">/api/v1/search</span>
+        <div class="chart-bar-bg"><div class="chart-bar-fill" style="width:46%; background:#7c3aed;"></div></div>
+        <span class="chart-val">1,842</span>
+      </div>
+      <div class="chart-row">
+        <span class="chart-label">/api/v1/analyze</span>
+        <div class="chart-bar-bg"><div class="chart-bar-fill" style="width:20%; background:#059669;"></div></div>
+        <span class="chart-val">312</span>
+      </div>
+      <div class="chart-row">
+        <span class="chart-label">/api/v1/embed</span>
+        <div class="chart-bar-bg"><div class="chart-bar-fill" style="width:4%; background:#d97706;"></div></div>
+        <span class="chart-val">89</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- API KEYS TABLE -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">API Keys</span>
+      <button class="btn-primary" onclick="alert('API key generated! (demo)')">+ Generate Key</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Label</th>
+          <th>Key</th>
+          <th>Calls</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>AI Agent Bot</strong></td>
+          <td><code style="font-family:monospace;font-size:0.78rem;background:var(--gray-100);padding:2px 6px;border-radius:4px">sk-stlr-i9j0k1l2…</code>
+            <button class="copy-btn" onclick="copyKey(this,'sk-stlr-i9j0k1l2-realkey')">Copy</button></td>
+          <td>5,671</td>
+          <td><span class="badge badge-active">Active</span></td>
+        </tr>
+        <tr>
+          <td><strong>Production App</strong></td>
+          <td><code style="font-family:monospace;font-size:0.78rem;background:var(--gray-100);padding:2px 6px;border-radius:4px">sk-stlr-a1b2c3d4…</code>
+            <button class="copy-btn" onclick="copyKey(this,'sk-stlr-a1b2c3d4-realkey')">Copy</button></td>
+          <td>1,842</td>
+          <td><span class="badge badge-active">Active</span></td>
+        </tr>
+        <tr>
+          <td><strong>Dev Sandbox</strong></td>
+          <td><code style="font-family:monospace;font-size:0.78rem;background:var(--gray-100);padding:2px 6px;border-radius:4px">sk-stlr-e5f6g7h8…</code>
+            <button class="copy-btn" onclick="copyKey(this,'sk-stlr-e5f6g7h8-realkey')">Copy</button></td>
+          <td>312</td>
+          <td><span class="badge badge-active">Active</span></td>
+        </tr>
+        <tr>
+          <td><strong>Test Suite</strong></td>
+          <td><code style="font-family:monospace;font-size:0.78rem;background:var(--gray-100);padding:2px 6px;border-radius:4px">sk-stlr-m3n4o5p6…</code>
+            <button class="copy-btn" onclick="copyKey(this,'sk-stlr-m3n4o5p6-realkey')">Copy</button></td>
+          <td>89</td>
+          <td><span class="badge badge-inactive">Inactive</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- RECENT TRANSACTIONS -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Recent HTTP 402 Authorized Requests</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Endpoint</th>
+          <th>Fee Paid</th>
+          <th>Asset</th>
+          <th>Tx Hash</th>
+          <th>Time</th>
+          <th style="text-align:right">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code style="font-family:monospace;font-size:0.78rem">/api/v1/generate</code></td>
+          <td><strong>0.05</strong></td>
+          <td><span class="badge badge-blue">XLM</span></td>
+          <td><code style="font-family:monospace;font-size:0.72rem;color:var(--gray-500)">a1b2c3d4…</code></td>
+          <td style="color:var(--gray-400);font-size:0.78rem">2s ago</td>
+          <td style="text-align:right"><span class="verified">✓ Verified</span></td>
+        </tr>
+        <tr>
+          <td><code style="font-family:monospace;font-size:0.78rem">/api/v1/search</code></td>
+          <td><strong>0.02</strong></td>
+          <td><span class="badge badge-green">USDC</span></td>
+          <td><code style="font-family:monospace;font-size:0.72rem;color:var(--gray-500)">e5f6g7h8…</code></td>
+          <td style="color:var(--gray-400);font-size:0.78rem">11s ago</td>
+          <td style="text-align:right"><span class="verified">✓ Verified</span></td>
+        </tr>
+        <tr>
+          <td><code style="font-family:monospace;font-size:0.78rem">/api/v1/analyze</code></td>
+          <td><strong>0.10</strong></td>
+          <td><span class="badge badge-blue">XLM</span></td>
+          <td><code style="font-family:monospace;font-size:0.72rem;color:var(--gray-500)">i9j0k1l2…</code></td>
+          <td style="color:var(--gray-400);font-size:0.78rem">34s ago</td>
+          <td style="text-align:right"><span class="verified">✓ Verified</span></td>
+        </tr>
+        <tr>
+          <td><code style="font-family:monospace;font-size:0.78rem">/api/v1/embed</code></td>
+          <td><strong>0.01</strong></td>
+          <td><span class="badge badge-green">USDC</span></td>
+          <td><code style="font-family:monospace;font-size:0.72rem;color:var(--gray-500)">m3n4o5p6…</code></td>
+          <td style="color:var(--gray-400);font-size:0.78rem">1m ago</td>
+          <td style="text-align:right"><span class="verified">✓ Verified</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+  function copyKey(btn, key) {
+    navigator.clipboard.writeText(key).then(() => {
+      btn.textContent = '✓ Copied';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+</script>
+</body>
+</html>
