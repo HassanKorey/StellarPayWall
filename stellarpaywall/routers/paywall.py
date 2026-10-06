@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter
 
 router = APIRouter(tags=["Paywall API"])
 

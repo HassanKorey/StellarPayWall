@@ -1,7 +1,8 @@
 from fastapi import FastAPI
-from stellarpaywall.routers.paywall import router as paywall_router
+
 from stellarpaywall.middleware.paywall import HTTP402Middleware
 from stellarpaywall.middleware.replay_guard import ReplayGuardMiddleware
+from stellarpaywall.routers.paywall import router as paywall_router
 
 app = FastAPI(
     title="StellarPayWall",
