@@ -1,0 +1,131 @@
+Project Specification & AI Agent Execution Plan:
+StellarPayWall (Project #3)
+A High-Throughput HTTP 402 Stellar Micropayment API Gateway & Middleware for API Monetization, Agentic Payments, and Soroban Asset Verification
+PURPOSE OF THIS SPECIFICATION: 
+This master document serves as a complete technical blueprint designed to be ingested directly by an AI coding agent (Cursor, Claude Code, etc.) to construct the entire StellarPayWall repository from scratch, populate a 10-issue Wave 10 maintainer backlog, set up CI/CD pipelines, and prepare the project for Drips Wave approval.
+1. Executive Summary & Ecosystem Value Proposition
+Modern distributed software and autonomous AI agent networks rely on API microservices to communicate, compute, and exchange data. However, traditional payment systems impose heavy transaction fees, multi-hop routing latencies, and credit card gateway requirements that make per-request micropayments (e.g., $0.001 per API invocation) cost-prohibitive. StellarPayWall introduces an open-source, lightweight middleware gateway that operationalizes the Web standard HTTP 402 ('Payment Required') code using the Stellar network.
+By leveraging Stellar's low transaction costs (10 Stroops or 0.00001 XLM per operation), sub-5-second ledger settlement, and atomic path payments, StellarPayWall enables API providers to monetize endpoints on a pay-per-request basis without intermediary clearinghouses. Furthermore, StellarPayWall seamlessly supports Soroban Asset Contract (SAC) tokens (such as USDC) and off-chain pre-funded payment channels for high-frequency micro-transactions.
+For Drips Wave 10, StellarPayWall delivers immediate ecosystem value by solving the micropayment monetization challenge for Stellar developers and AI agent frameworks. The repository is architected with a modular codebase, strict CI/CD linting, and a fully pre-populated 10-issue maintainer backlog mapped directly to Drips point complexity tiers (100, 150, 200 points).
+Key Feature
+Ecosystem Impact & Technical Benefit
+HTTP 402 Standard Integration
+Returns standardized 402 headers with required payment details (amount, asset, merchant address, nonce) when unauthenticated API calls are received.
+Horizon & Soroban Verification
+Asynchronously validates submitted Stellar transaction hashes or Soroban token transfers via Horizon RPC before releasing API responses.
+Replay Protection & Redis Cache
+Tracks transaction nonces and pre-funded micro-balances in Redis to guarantee zero double-spending and sub-50ms API authorization latencies.
+2. Target Technical Architecture (StellarPayWall v1.0)
+StellarPayWall is structured as a high-performance Python/FastAPI backend accompanied by lightweight client SDKs (TypeScript and Python) and a Next.js/Tailwind merchant management dashboard. The system consists of three distinct layers:
+Layer 1: Gateway & Middleware Layer: 
+Intercepts incoming HTTP requests, evaluates headers (`X-Stellar-Tx-Hash` or `Bearer <payment_token>`), and issues HTTP 402 challenges when payment is required.
+Layer 2: Async Verification Engine: 
+Communicates with Stellar Horizon RPC endpoints and Soroban RPC nodes to verify payment ops, asset trustlines, destination addresses, and payment path amounts.
+Layer 3: Merchant & Developer Portal: 
+A responsive Next.js dashboard providing API key management, pricing route configuration, real-time revenue analytics, and transaction verification logs.
+Tech Stack & Infrastructure Specifications
+Component
+Technology & Framework Specification
+Backend Gateway
+FastAPI (Python 3.11+), Uvicorn, AsyncHTTPSession, Pydantic v2
+Blockchain SDK
+stellar-sdk (Python), @stellar/stellar-sdk (JS/TS), Soroban RPC Client
+Cache & Replay Guard
+Redis 7.0 (Async redis-py) for nonces, rate limits, and payment sessions
+Database & ORM
+PostgreSQL, SQLAlchemy 2.0 (AsyncIO), Alembic database migrations
+Merchant Frontend
+Next.js 14 (App Router), React, TailwindCSS, Lucide-React, Freighter Wallet SDK
+3. Step-by-Step AI Agent Execution Plan
+To build StellarPayWall autonomously, the AI coding agent should execute the implementation in 6 sequential phases. Each phase introduces verified modular components, complete with unit tests and documentation.
+Phase 1: Base Repository Scaffolding
+Initialize FastAPI boilerplate, Pydantic models, directory layout (`stellarpaywall/`), Alembic migrations, Docker Compose (Postgres + Redis), and CI configuration.
+Phase 2: HTTP 402 Protocol & Middleware
+Implement the core FastAPI middleware (`stellarpaywall/middleware/paywall.py`) to parse headers, calculate dynamic endpoint fees, and issue standard 402 challenge responses.
+Phase 3: Horizon & Soroban Verifier Service
+Develop async background service (`stellarpaywall/services/payment_verifier.py`) to query Horizon RPC for transaction status, memo hashes, and asset transfers.
+Phase 4: Redis Replay Guard & Session Storage
+Build nonce tracking layer (`stellarpaywall/cache/replay_guard.py`) to ensure transaction hashes cannot be re-used across multiple requests.
+Phase 5: Client SDK Development
+Create lightweight SDK wrappers for TypeScript (`sdks/typescript/`) and Python (`sdks/python/`) that handle automatic HTTP 402 payment signing and retry logic.
+Phase 6: Merchant Dashboard & CI/CD Pipeline
+Build the Next.js merchant portal for API key generation and configure GitHub Actions CI running `ruff` linting and `pytest` coverage enforcement.
+4. Master 10-Issue Maintainer Backlog (Drips Wave 10)
+To meet Drips Wave maintainer approval criteria, the issue tracker must contain structured, well-scoped tasks explicitly categorized by point complexity tiers (Trivial: 100 pts, Medium: 150 pts, High: 200 pts). Below are the 10 pre-written GitHub issues to be published to the repository.
+Issue #1: [Trivial (100 Points)] Add OpenAPI / FastAPI Metadata Tags & Detailed Docstrings to Paywall Routes
+Target File: 
+stellarpaywall/routers/paywall.py
+Requirements: 
+Enhance OpenAPI documentation with tags, summary descriptions, and response examples for HTTP 402, 200, and 422 codes.
+Acceptance Criteria: 
+All endpoints in `paywall.py` display structured documentation at `/docs`, with zero missing query parameter descriptions.
+Issue #2: [Trivial (100 Points)] Implement Exponential Backoff & Retry Logic for Horizon RPC Client
+Target File: 
+stellarpaywall/services/horizon_client.py
+Requirements: 
+Wrap Horizon HTTP calls with an async retry policy handling 429 (Rate Limit) and 503 errors using `tenacity`.
+Acceptance Criteria: 
+Client retries up to 4 times with exponential jitter before raising a typed `HorizonConnectionError`. Unit tests verify retry counts.
+Issue #3: [Medium (150 Points)] Build Async Horizon Path Payment & Token Transfer Verifier
+Target File: 
+stellarpaywall/services/payment_verifier.py
+Requirements: 
+Create an async verification module that verifies payment transactions against source accounts, asset trustlines, and destination addresses.
+Acceptance Criteria: 
+`verify_payment(tx_hash, expected_amount, destination)` correctly returns `True` for valid Horizon payments and `False` for invalid/unconfirmed transactions.
+Issue #4: [Medium (150 Points)] Develop Redis Nonce Ledger & Replay Prevention Middleware
+Target File: 
+stellarpaywall/middleware/replay_guard.py
+Requirements: 
+Build Redis caching layer that logs used Stellar transaction hashes with configurable TTLs to prevent transaction replay attacks.
+Acceptance Criteria: 
+Submitting the same transaction hash twice returns an HTTP 400 'Transaction already spent' error. Test coverage > 95%.
+Issue #5: [Medium (150 Points)] Build Pytest Async Integration Test Suite for Paywall Gateway
+Target File: 
+tests/test_paywall_gateway.py
+Requirements: 
+Implement comprehensive async pytest suite covering HTTP 402 challenges, valid payment responses, and invalid transaction edge cases.
+Acceptance Criteria: 
+`pytest` executes cleanly with > 90% code coverage across all core routers and middleware.
+Issue #6: [Medium (150 Points)] Build Next.js Tailwind Merchant API Key & Paywall Analytics Component
+Target File: 
+frontend/components/MerchantAnalytics.tsx
+Requirements: 
+Create a responsive React component displaying total revenue (XLM/USDC), active API keys, and endpoint call volumes.
+Acceptance Criteria: 
+Component renders clean Tailwind charts with mock/live API data and zero console warnings.
+Issue #7: [High (200 Points)] Implement HTTP 402 Protocol Negotiator & Dynamic Price Estimator
+Target File: 
+stellarpaywall/core/http402.py
+Requirements: 
+Develop dynamic pricing logic that calculates endpoint costs based on compute load, payload size, or query complexity.
+Acceptance Criteria: 
+Middleware attaches dynamic `WWW-Authenticate: Stellar asset="XLM", amount="0.05"` headers based on route decorators.
+Issue #8: [High (200 Points)] Develop Soroban Asset Contract (SAC) Token Payment Verifier
+Target File: 
+stellarpaywall/services/soroban_verifier.py
+Requirements: 
+Extend payment verifier to validate Soroban smart contract invocations and SAC token transfers via Soroban RPC `getTransaction`.
+Acceptance Criteria: 
+Gateway successfully verifies SAC USDC transfers on Soroban testnet/mainnet with full event log parsing.
+Issue #9: [High (200 Points)] Develop Multi-Language Client SDK Packages (TypeScript & Python)
+Target File: 
+sdks/typescript/ & sdks/python/
+Requirements: 
+Build client SDKs that wrap standard `fetch`/`requests` calls, intercept HTTP 402 responses, auto-sign Stellar payments, and retry transparently.
+Acceptance Criteria: 
+TypeScript SDK compiles clean `.d.ts` types; Python SDK passes `mypy --strict`. Both publish cleanly to mock registries.
+Issue #10: [High (200 Points)] Implement Automated GitHub Actions CI/CD Pipeline with Coverage Enforcement
+Target File: 
+.github/workflows/ci.yml
+Requirements: 
+Configure GitHub Actions workflow to run `ruff` linting, `mypy` type checks, and `pytest` with 90% coverage enforcement on push/PR.
+Acceptance Criteria: 
+CI workflow passes consistently on GitHub, blocking unformatted or untested PRs automatically.
+5. Governance, CI/CD, and Drips Approval Checklist
+To ensure seamless approval upon applying to the Stellar Wave Program, the repository must strictly comply with Drips open-source governance guidelines.
+Repository includes full governance files: `MAINTAINERS.md`, `CONTRIBUTING.md`, `SECURITY.md`, `LICENSE` (MIT).
+Repository commit history shows consistent development activity (20+ initial setup commits) rather than an empty shell.
+Issue backlog contains at least 10 open issues tagged with explicit complexity tiers (`Trivial`, `Medium`, `High`).
+README.md features live API documentation links, architecture diagrams, and complete local setup instructions.
+GitHub Actions CI workflow actively passes linting and test coverage checks on all pull requests.
