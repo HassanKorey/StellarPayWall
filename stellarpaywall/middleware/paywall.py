@@ -12,8 +12,8 @@ from stellarpaywall.services.payment_verifier import verify_payment
 
 class HTTP402Middleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        # Skip health check and docs
-        if request.url.path in ["/health", "/docs", "/openapi.json", "/redoc"]:
+        # Skip health check, docs, and public dashboard
+        if request.url.path in ["/health", "/docs", "/openapi.json", "/redoc", "/", "/dashboard", "/favicon.ico"]:
             return await call_next(request)
 
         # Allow payment hash via either X-PayWall-Tx-Hash or X-Stellar-Tx-Hash

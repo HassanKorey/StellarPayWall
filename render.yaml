@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: stellarpaywall
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn stellarpaywall.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: STELLAR_NETWORK
+        value: TESTNET
+      - key: STELLAR_REPLAY_DB_PATH
+        value: /tmp/stellar_replay.db
