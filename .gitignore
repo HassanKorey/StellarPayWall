@@ -31,3 +31,13 @@ htmlcov/
 frontend/node_modules/
 frontend/.next/
 frontend/out/
+
+# Rust
+contracts/**/target/
+contracts/**/test_snapshots/
+target/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
