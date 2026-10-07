@@ -83,40 +83,9 @@ sequenceDiagram
 
 ---
 
-## 🚀 Quickstart
-
-### 1. Installation
-
-```bash
-git clone https://github.com/HassanKorey/StellarPayWall.git
-cd StellarPayWall
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-### 2. Start Gateway Server
-
-```bash
-uvicorn stellarpaywall.main:app --reload --port 8000
-```
-Open [http://localhost:8000/docs](http://localhost:8000/docs) for the Swagger UI or [http://localhost:8000/](http://localhost:8000/) for the merchant dashboard.
-
-### 3. Run Test Suite
-
-```bash
-# Gateway & Security Vector Tests
-pytest tests/ -v
-
-# Soroban Smart Contract Tests
-cd contracts/paywall_vault && cargo test && cd ../..
-```
-
----
-
 ## 📦 SDK Integration
 
-Client SDKs automatically intercept `402 Payment Required`, sign the Stellar transaction with the challenge UUID, and retry the request transparently.
+Client SDKs automatically intercept `402 Payment Required`, sign the Stellar transaction with the challenge UUID, and retry the request transparently against the live gateway.
 
 ### Python
 
@@ -181,6 +150,38 @@ Located in [`contracts/paywall_vault/`](contracts/paywall_vault/):
 | :--- | :--- |
 | `X-PayWall-Tx-Hash` | Stellar transaction hash paying the merchant |
 | `X-PayWall-Challenge-UUID` | Challenge UUID matching the transaction memo |
+
+---
+
+## 🛠️ Local Development & Testing
+
+For local development or running the test suites:
+
+### 1. Environment Setup
+
+```bash
+git clone https://github.com/HassanKorey/StellarPayWall.git
+cd StellarPayWall
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 2. Run Local Gateway Server
+
+```bash
+uvicorn stellarpaywall.main:app --reload
+```
+
+### 3. Run Test Suite
+
+```bash
+# Python Gateway & Security Tests
+pytest tests/ -v
+
+# Soroban Smart Contract Tests
+cd contracts/paywall_vault && cargo test && cd ../..
+```
 
 ---
 
