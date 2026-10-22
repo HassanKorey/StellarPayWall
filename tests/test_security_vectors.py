@@ -9,7 +9,11 @@ from stellarpaywall.services.horizon_client import (
     clear_mock_transactions,
     register_mock_transaction,
 )
-from stellarpaywall.services.soroban_verifier import verify_sac_transfer
+from stellarpaywall.services.soroban_verifier import (
+    clear_mock_soroban_txs,
+    register_mock_soroban_tx,
+    verify_sac_transfer,
+)
 from stellarpaywall.services.verifier import (
     is_tx_spent,
     reset_replay_db,
@@ -22,10 +26,12 @@ def clean_environment():
     _used_hashes.clear()
     reset_replay_db()
     clear_mock_transactions()
+    clear_mock_soroban_txs()
     yield
     _used_hashes.clear()
     reset_replay_db()
     clear_mock_transactions()
+    clear_mock_soroban_txs()
 
 @pytest.mark.asyncio
 async def test_standard_valid_402_payment_flow():
@@ -188,7 +194,7 @@ async def test_asset_mismatch_rejection():
 @pytest.mark.asyncio
 async def test_soroban_vault_verification_mocking():
     """
-    Test Soroban Smart Contract SAC token transfer verification.
+    Test Soroban Smart Contract SAC token transfer verification baseline.
     """
     # Valid SAC invocation
     valid_sac_res = await verify_sac_transfer("valid_soroban_tx", expected_amount="0.05")
@@ -197,3 +203,184 @@ async def test_soroban_vault_verification_mocking():
     # Invalid SAC invocation
     invalid_sac_res = await verify_sac_transfer("invalid_soroban_tx", expected_amount="0.05")
     assert invalid_sac_res is False
+
+
+@pytest.mark.asyncio
+async def test_soroban_sac_event_verifier_full_flow():
+    """
+    Test SEP-41 token transfer event parsing and validation:
+    Validates contract ID, recipient address, amount, and challenge UUID.
+    """
+    tx_hash = "soroban_sac_tx_valid_001"
+    contract_id = "CA5Q7TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJSEPQ"
+    recipient = "GA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJVWAC"
+    challenge_uuid = "challenge-uuid-sac-test-123"
+
+    register_mock_soroban_tx(tx_hash, {
+        "status": "SUCCESS",
+        "events": [
+            {
+                "contractId": contract_id,
+                "type": "contract",
+                "topics": ["transfer", "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5", recipient],
+                "data": "1000000",  # 0.10 tokens (scaled 10^7)
+                "inSuccessfulContractCall": True,
+                "memo": challenge_uuid,
+            }
+        ],
+        "memo": challenge_uuid,
+    })
+
+    verified = await verify_sac_transfer(
+        tx_hash=tx_hash,
+        expected_amount="0.10",
+        destination=recipient,
+        expected_contract_id=contract_id,
+        challenge_uuid=challenge_uuid,
+    )
+    assert verified is True
+
+    # Verify anti-replay recorded the spent hash
+    assert is_tx_spent(tx_hash) is True
+    replayed = await verify_sac_transfer(
+        tx_hash=tx_hash,
+        expected_amount="0.10",
+        destination=recipient,
+        expected_contract_id=contract_id,
+        challenge_uuid=challenge_uuid,
+    )
+    assert replayed is False
+
+
+@pytest.mark.asyncio
+async def test_soroban_sac_contract_id_mismatch():
+    """Test rejection when contract ID in event log does not match expected token contract."""
+    tx_hash = "soroban_sac_tx_bad_contract"
+    register_mock_soroban_tx(tx_hash, {
+        "status": "SUCCESS",
+        "events": [
+            {
+                "contractId": "C_WRONG_CONTRACT_ID",
+                "type": "contract",
+                "topics": ["transfer", "G_SENDER", "merchant_address"],
+                "data": "500000",
+                "inSuccessfulContractCall": True,
+            }
+        ],
+    })
+
+    verified = await verify_sac_transfer(
+        tx_hash=tx_hash,
+        expected_amount="0.05",
+        destination="merchant_address",
+        expected_contract_id="C_EXPECTED_USDC_CONTRACT",
+    )
+    assert verified is False
+
+
+@pytest.mark.asyncio
+async def test_soroban_sac_recipient_mismatch():
+    """Test rejection when recipient address in event log does not match merchant address."""
+    tx_hash = "soroban_sac_tx_bad_recipient"
+    register_mock_soroban_tx(tx_hash, {
+        "status": "SUCCESS",
+        "events": [
+            {
+                "contractId": "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJSEPQ",
+                "type": "contract",
+                "topics": ["transfer", "G_SENDER", "G_SOME_OTHER_RECIPIENT"],
+                "data": "500000",
+                "inSuccessfulContractCall": True,
+            }
+        ],
+    })
+
+    verified = await verify_sac_transfer(
+        tx_hash=tx_hash,
+        expected_amount="0.05",
+        destination="merchant_address",
+    )
+    assert verified is False
+
+
+@pytest.mark.asyncio
+async def test_soroban_sac_underpayment_rejection():
+    """Test rejection when token amount transferred in event is less than required."""
+    tx_hash = "soroban_sac_tx_underpaid"
+    register_mock_soroban_tx(tx_hash, {
+        "status": "SUCCESS",
+        "events": [
+            {
+                "contractId": "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJSEPQ",
+                "type": "contract",
+                "topics": ["transfer", "G_SENDER", "merchant_address"],
+                "data": "100000",  # 0.01 tokens, but 0.05 required
+                "inSuccessfulContractCall": True,
+            }
+        ],
+    })
+
+    verified = await verify_sac_transfer(
+        tx_hash=tx_hash,
+        expected_amount="0.05",
+        destination="merchant_address",
+    )
+    assert verified is False
+
+
+@pytest.mark.asyncio
+async def test_soroban_sac_memo_challenge_mismatch():
+    """Test rejection when transaction memo / challenge UUID does not match requirement."""
+    tx_hash = "soroban_sac_tx_bad_memo"
+    register_mock_soroban_tx(tx_hash, {
+        "status": "SUCCESS",
+        "events": [
+            {
+                "contractId": "CCW67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJSEPQ",
+                "type": "contract",
+                "topics": ["transfer", "G_SENDER", "merchant_address"],
+                "data": "500000",
+                "inSuccessfulContractCall": True,
+                "memo": "attacker_memo_123",
+            }
+        ],
+        "memo": "attacker_memo_123",
+    })
+
+    verified = await verify_sac_transfer(
+        tx_hash=tx_hash,
+        expected_amount="0.05",
+        destination="merchant_address",
+        challenge_uuid="expected_challenge_uuid_xyz",
+    )
+    assert verified is False
+
+
+@pytest.mark.asyncio
+async def test_soroban_paywall_vault_event_verification():
+    """Test parsing and verification of PaywallVault PaymentVerified events."""
+    tx_hash = "soroban_vault_tx_001"
+    contract_id = "CV67TSZV3SSS2HXMBQ5JFGCKJNXKZM7UQUWUZPUTHXSTZLEO7SJSEPQ"
+    challenge_uuid = "req_payment_402_uuid"
+
+    register_mock_soroban_tx(tx_hash, {
+        "status": "SUCCESS",
+        "events": [
+            {
+                "contractId": contract_id,
+                "type": "contract",
+                "topics": ["PaymentVerified", challenge_uuid],
+                "data": "500000",  # 0.05
+                "inSuccessfulContractCall": True,
+            }
+        ],
+    })
+
+    verified = await verify_sac_transfer(
+        tx_hash=tx_hash,
+        expected_amount="0.05",
+        expected_contract_id=contract_id,
+        challenge_uuid=challenge_uuid,
+    )
+    assert verified is True
+
