@@ -7,9 +7,11 @@
 <p align="center">
   <a href="https://stellarpaywall.onrender.com/"><img src="https://img.shields.io/badge/Render-Live%20Deployment-46E3B7?style=flat-square&logo=render&logoColor=white" alt="Render Deployment" /></a>
   <a href="https://github.com/HassanKorey/StellarPayWall/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/HassanKorey/StellarPayWall/ci.yml?branch=main&label=CI%20Suite&style=flat-square" alt="CI Suite" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT" /></a>
-  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.11+-3776AB.svg?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+" /></a>
+  <a href="https://developers.stellar.org/"><img src="https://img.shields.io/badge/Stellar-Testnet-blue?style=flat-square&logo=stellar" alt="Stellar Testnet" /></a>
   <a href="https://soroban.stellar.org/"><img src="https://img.shields.io/badge/Soroban-v21.7+-792EE5.svg?style=flat-square&logo=rust&logoColor=white" alt="Soroban SDK" /></a>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.11+-3776AB.svg?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT" /></a>
+  <a href="MAINTAINERS.md"><img src="https://img.shields.io/badge/Governance-Multi--Maintainer-green?style=flat-square" alt="Governance: Multi-Maintainer" /></a>
 </p>
 
 ---
@@ -35,6 +37,7 @@ x-paywall-amount: 0.05
 x-paywall-asset: XLM
 x-paywall-destination: merchant_address
 x-paywall-challenge-uuid: <UUID>
+x-paywall-expires-in: 300
 
 {"detail":"Payment Required"}
 ```
@@ -46,9 +49,26 @@ x-paywall-challenge-uuid: <UUID>
 - **HTTP 402 Standard**: Native Web standard payment challenges via `WWW-Authenticate` and `X-PayWall-*` headers.
 - **Near-Zero Transaction Fees**: Powered by Stellar (10 Stroops / 0.00001 XLM per payment operation).
 - **Sub-5-Second Settlement**: Instant on-chain confirmation via Stellar Horizon and Soroban RPC.
-- **Soroban Smart Contract Vault**: On-chain payment escrow & SAC token verification ([`contracts/paywall_vault`](contracts/paywall_vault)).
-- **Anti-Replay Protection**: Challenge UUID memo binding with SQLite/Redis atomic double-spend prevention.
+- **Soroban Smart Contract Vault**: On-chain payment escrow & SEP-41 SAC token verification ([`contracts/paywall_vault`](contracts/paywall_vault)).
+- **Anti-Replay Protection**: Challenge UUID memo binding with SQLite/Redis atomic double-spend prevention and configurable TTL expiration.
 - **Turnkey Client SDKs**: Transparent auto-payment interceptors for Python and TypeScript.
+
+---
+
+## 🏛️ System Architecture
+
+```mermaid
+graph TD
+    Client[Client / Autonomous AI Agent] -->|1. Initial Request| Gateway[StellarPayWall Gateway]
+    Gateway -->|2. 402 Payment Required + Challenge UUID| Client
+    Client -->|3. Sign & Submit Payment| Stellar[Stellar Horizon / Soroban RPC]
+    Client -->|4. Retry Request with X-PayWall-Tx-Hash| Gateway
+    Gateway -->|5. Check & Lock Nonce with TTL| Ledger[(Anti-Replay Nonce Ledger)]
+    Gateway -->|6. Verify Payment & Memo UUID| Stellar
+    Stellar -->|7. Confirm On-Chain Settlement| Gateway
+    Gateway -->|8. Mark Nonce Spent| Ledger
+    Gateway -->|9. Forward & Return 200 OK| Client
+```
 
 ---
 
@@ -59,7 +79,7 @@ sequenceDiagram
     autonumber
     actor Client as Client / AI Agent
     participant Gateway as StellarPayWall Gateway
-    participant Ledger as Replay Guard Ledger
+    participant Ledger as Anti-Replay Ledger
     participant Horizon as Stellar Horizon / Soroban
     participant Origin as Protected Origin API
 
@@ -71,11 +91,11 @@ sequenceDiagram
     Horizon-->>Client: Transaction Confirmed (tx_hash)
 
     Client->>Gateway: GET /protected-resource (X-PayWall-Tx-Hash)
-    Gateway->>Ledger: Check if tx_hash already spent
+    Gateway->>Ledger: Check if tx_hash already spent or expired
     Ledger-->>Gateway: Not spent (Valid)
     Gateway->>Horizon: Verify amount, destination, memo UUID
     Horizon-->>Gateway: Confirmed & Valid
-    Gateway->>Ledger: Mark tx_hash as spent
+    Gateway->>Ledger: Mark tx_hash as spent (with TTL)
     Gateway->>Origin: Forward request
     Origin-->>Gateway: 200 OK (Response Payload)
     Gateway-->>Client: 200 OK (Response Payload)
@@ -143,6 +163,7 @@ Located in [`contracts/paywall_vault/`](contracts/paywall_vault/):
 | `X-PayWall-Asset` | Required asset code | `XLM` |
 | `X-PayWall-Destination`| Merchant public address | `G...` |
 | `X-PayWall-Challenge-UUID` | Unique challenge UUID | `234de163-1869-4b24-8d90-45e171d9e66c` |
+| `X-PayWall-Expires-In` | Challenge TTL in seconds | `300` |
 
 ### Payment Submission Headers
 
@@ -185,9 +206,10 @@ cd contracts/paywall_vault && cargo test && cd ../..
 
 ---
 
-## 🤝 Contributing
+## 👥 Governance & Contributing
 
-Contributions are welcome! Please review [CONTRIBUTING.md](CONTRIBUTING.md) for development workflows and guidelines.
+- Multi-maintainer review workflow and maintainer responsibilities are documented in [MAINTAINERS.md](MAINTAINERS.md).
+- Contributions are welcome! Please review [CONTRIBUTING.md](CONTRIBUTING.md) for development workflows and guidelines.
 
 ## 📄 License
 
