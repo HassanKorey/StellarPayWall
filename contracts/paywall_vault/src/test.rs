@@ -118,3 +118,108 @@ fn test_invalid_amount_rejection() {
     let res_neg = vault_client.try_pay_for_resource(&payer, &request_id, &-10);
     assert_eq!(res_neg.err(), Some(Ok(Error::InvalidAmount)));
 }
+
+#[test]
+fn test_verification_getters_and_memo_validation() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let payer = Address::generate(&env);
+
+    let (token_client, token_asset_client) = create_token_contract(&env, &token_admin);
+    token_asset_client.mint(&payer, &1000);
+
+    let contract_id = env.register_contract(None, PaywallVault);
+    let vault_client = PaywallVaultClient::new(&env, &contract_id);
+    vault_client.initialize(&admin, &token_client.address);
+
+    // Verify getters
+    assert_eq!(vault_client.get_admin(), admin);
+    assert_eq!(vault_client.get_token(), token_client.address);
+
+    let challenge_memo = Symbol::new(&env, "memo_uuid_123");
+    // Before payment, verification returns false
+    assert!(!vault_client.verify_payment_memo(&challenge_memo, &50));
+
+    // Pay 50 SAC tokens
+    vault_client.pay_for_resource(&payer, &challenge_memo, &50);
+
+    // Verify with exact amount and lower required amount
+    assert!(vault_client.verify_payment_memo(&challenge_memo, &50));
+    assert!(vault_client.verify_payment_memo(&challenge_memo, &25));
+
+    // Underpayment check: requiring 100 when only 50 was paid returns false
+    assert!(!vault_client.verify_payment_memo(&challenge_memo, &100));
+
+    // Non-existent challenge returns false
+    let unknown_memo = Symbol::new(&env, "memo_unknown");
+    assert!(!vault_client.verify_payment_memo(&unknown_memo, &10));
+}
+
+#[test]
+fn test_uninitialized_vault_operations_rejection() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let payer = Address::generate(&env);
+    let merchant = Address::generate(&env);
+
+    let contract_id = env.register_contract(None, PaywallVault);
+    let vault_client = PaywallVaultClient::new(&env, &contract_id);
+
+    // Attempting getters before initialization must fail
+    assert_eq!(vault_client.try_get_admin().err(), Some(Ok(Error::NotInitialized)));
+    assert_eq!(vault_client.try_get_token().err(), Some(Ok(Error::NotInitialized)));
+
+    let request_id = Symbol::new(&env, "req_uninit");
+    // Attempting to pay before initialization must fail
+    let pay_res = vault_client.try_pay_for_resource(&payer, &request_id, &50);
+    assert_eq!(pay_res.err(), Some(Ok(Error::NotInitialized)));
+
+    // Attempting to claim balance before initialization must fail
+    let claim_res = vault_client.try_claim_merchant_balance(&merchant, &50);
+    assert_eq!(claim_res.err(), Some(Ok(Error::NotInitialized)));
+}
+
+#[test]
+fn test_double_initialization_rejection() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let (token_client, _) = create_token_contract(&env, &token_admin);
+
+    let contract_id = env.register_contract(None, PaywallVault);
+    let vault_client = PaywallVaultClient::new(&env, &contract_id);
+
+    // First init succeeds
+    assert!(vault_client.try_initialize(&admin, &token_client.address).is_ok());
+
+    // Second init must fail with AlreadyInitialized
+    let res = vault_client.try_initialize(&admin, &token_client.address);
+    assert_eq!(res.err(), Some(Ok(Error::AlreadyInitialized)));
+}
+
+#[test]
+fn test_zero_amount_claim_rejection() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let merchant = Address::generate(&env);
+    let (token_client, _) = create_token_contract(&env, &token_admin);
+
+    let contract_id = env.register_contract(None, PaywallVault);
+    let vault_client = PaywallVaultClient::new(&env, &contract_id);
+    vault_client.initialize(&admin, &token_client.address);
+
+    let res_zero = vault_client.try_claim_merchant_balance(&merchant, &0);
+    assert_eq!(res_zero.err(), Some(Ok(Error::InvalidAmount)));
+
+    let res_neg = vault_client.try_claim_merchant_balance(&merchant, &-5);
+    assert_eq!(res_neg.err(), Some(Ok(Error::InvalidAmount)));
+}
