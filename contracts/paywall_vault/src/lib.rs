@@ -136,6 +136,32 @@ impl PaywallVault {
         let payment_key = DataKey::Payment(request_id);
         env.storage().persistent().get(&payment_key)
     }
+
+    /// Retrieve the configured admin address.
+    pub fn get_admin(env: Env) -> Result<Address, Error> {
+        env.storage()
+            .instance()
+            .get(&DataKey::Admin)
+            .ok_or(Error::NotInitialized)
+    }
+
+    /// Retrieve the accepted SAC token address.
+    pub fn get_token(env: Env) -> Result<Address, Error> {
+        env.storage()
+            .instance()
+            .get(&DataKey::Token)
+            .ok_or(Error::NotInitialized)
+    }
+
+    /// Check if a challenge request_id / memo has been paid with at least the expected amount.
+    pub fn verify_payment_memo(env: Env, request_id: Symbol, expected_amount: i128) -> bool {
+        let payment_key = DataKey::Payment(request_id);
+        if let Some(record) = env.storage().persistent().get::<DataKey, PaymentRecord>(&payment_key) {
+            record.paid && record.amount >= expected_amount
+        } else {
+            false
+        }
+    }
 }
 
 #[cfg(test)]

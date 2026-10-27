@@ -1,216 +1,186 @@
-# StellarPayWall
+# StellarPayWall ⚡
 
-<p align="center">
-  <strong>High-Throughput HTTP 402 Stellar Micropayment Gateway & Middleware for API Monetization and Autonomous Agent Commerce.</strong>
-</p>
+> **High-Throughput HTTP 402 Micropayment API Gateway & Middleware powered by Stellar & Soroban smart contracts.**
 
-<p align="center">
-  <a href="https://stellarpaywall.onrender.com/"><img src="https://img.shields.io/badge/Render-Live%20Deployment-46E3B7?style=flat-square&logo=render&logoColor=white" alt="Render Deployment" /></a>
-  <a href="https://github.com/HassanKorey/StellarPayWall/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/HassanKorey/StellarPayWall/ci.yml?branch=main&label=CI%20Suite&style=flat-square" alt="CI Suite" /></a>
-  <a href="https://developers.stellar.org/"><img src="https://img.shields.io/badge/Stellar-Testnet-blue?style=flat-square&logo=stellar" alt="Stellar Testnet" /></a>
-  <a href="https://soroban.stellar.org/"><img src="https://img.shields.io/badge/Soroban-v21.7+-792EE5.svg?style=flat-square&logo=rust&logoColor=white" alt="Soroban SDK" /></a>
-  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.11+-3776AB.svg?style=flat-square&logo=python&logoColor=white" alt="Python 3.11+" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License: MIT" /></a>
-  <a href="MAINTAINERS.md"><img src="https://img.shields.io/badge/Governance-Multi--Maintainer-green?style=flat-square" alt="Governance: Multi-Maintainer" /></a>
-</p>
+[![CI Build](https://github.com/HassanKorey/StellarPayWall-app/actions/workflows/ci.yml/badge.svg)](https://github.com/HassanKorey/StellarPayWall-app/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/HassanKorey/StellarPayWall-app/blob/main/LICENSE)
+[![Stellar Testnet](https://img.shields.io/badge/Stellar-Testnet-success.svg)](https://stellar.expert/explorer/testnet/contract/CA4L7T6R74G3T5F5V7V7RWWUHE2J76Y4WJ3L7C2WJ3L7C2WJ3L7C2WJ3)
+[![Soroban SDK v21.0.0](https://img.shields.io/badge/Soroban%20SDK-v21.0.0-blue.svg)](https://soroban.stellar.org)
+
+📖 **Documentation Portal**: [https://HassanKorey.github.io/StellarPayWall-app](https://HassanKorey.github.io/StellarPayWall-app)  
+🖥️ **Live Merchant Dashboard**: [https://stellarpaywall.onrender.com](https://stellarpaywall.onrender.com)  
+📚 **Public API Docs (Swagger UI)**: [https://stellarpaywall.onrender.com/docs](https://stellarpaywall.onrender.com/docs)  
+🩺 **Gateway Health Check**: [https://stellarpaywall.onrender.com/health](https://stellarpaywall.onrender.com/health)
 
 ---
 
-## ⚡ Live Deployment
+## 🌟 Overview
 
-| Service | Endpoint | Description |
+**StellarPayWall** is an open-source, production-grade micropayment gateway implementing the standard `HTTP 402 Payment Required` protocol over the **Stellar Network** and **Soroban smart contracts**.
+
+It enables API providers, data brokers, and autonomous AI agents (such as LangChain and CrewAI agents) to monetize endpoints on a pay-per-request basis with fractions of a cent per request and sub-5-second finality.
+
+### Key Highlights
+- **RFC-Compliant HTTP 402 Handshake**: Automatically challenges unauthenticated API requests with `WWW-Authenticate` and `X-PayWall-*` header instructions.
+- **Dual Settlement Verifier**: Supports native Stellar Horizon transfers (XLM) and Soroban Asset Contract (SAC / SEP-41 USDC/XLM) token transfers.
+- **Atomic Anti-Replay Nonce Ledger**: SQLite WAL journaling and Redis distributed cache with TTL locks preventing double-spend race conditions.
+- **Dynamic Price Engine**: Calculates dynamic rates per endpoint based on computational intensity or server load.
+- **Client SDKs**: Async Python and TypeScript/Node.js client SDKs with automatic HTTP 402 interception and transaction signing.
+- **Merchant Analytics UI**: Next.js dashboard providing real-time telemetry, revenue metrics, and API key management.
+
+---
+
+## 👥 Maintainer Governance
+
+| Name | Role | GitHub | Contact |
+| :--- | :--- | :--- | :--- |
+| Hassan Akorede (EDUN) | Lead Architect | [@HassanKorey](https://github.com/HassanKorey) | Telegram: `@HassanKorey` |
+| Co-Maintainer | Middleware Reviewer | [@CoMaintainer](https://github.com/CoMaintainer) | Discord: `comaintainer#0001` |
+
+For triage procedures, approval thresholds, and security disclosure policies, consult [MAINTAINERS.md](MAINTAINERS.md) and [SECURITY.md](SECURITY.md).
+
+---
+
+## 🌐 Live Deployments & Essential Links
+
+| Service | URL | Description |
 | :--- | :--- | :--- |
-| **Merchant Dashboard** | [stellarpaywall.onrender.com/](https://stellarpaywall.onrender.com/) | Live merchant analytics & transaction monitor |
-| **Interactive API Docs** | [stellarpaywall.onrender.com/docs](https://stellarpaywall.onrender.com/docs) | OpenAPI / Swagger interactive documentation |
-| **Health Check** | [stellarpaywall.onrender.com/health](https://stellarpaywall.onrender.com/health) | Uptime & container probe (`{"status":"ok"}`) |
-| **Protected Demo (HTTP 402)** | [stellarpaywall.onrender.com/protected-resource](https://stellarpaywall.onrender.com/protected-resource) | Live HTTP 402 payment challenge endpoint |
-
-### Test via cURL
-
-```bash
-curl -i https://stellarpaywall.onrender.com/protected-resource
-```
-```http
-HTTP/2 402 Payment Required
-www-authenticate: Stellar asset="XLM", amount="0.05", destination="merchant_address", challenge="<UUID>"
-x-paywall-amount: 0.05
-x-paywall-asset: XLM
-x-paywall-destination: merchant_address
-x-paywall-challenge-uuid: <UUID>
-x-paywall-expires-in: 300
-
-{"detail":"Payment Required"}
-```
+| **Documentation Portal** | [https://HassanKorey.github.io/StellarPayWall-app](https://HassanKorey.github.io/StellarPayWall-app) | MkDocs Material documentation site |
+| **Merchant Dashboard** | [https://stellarpaywall.onrender.com](https://stellarpaywall.onrender.com) | Live merchant dashboard and transaction feed |
+| **API Docs (Swagger UI)** | [https://stellarpaywall.onrender.com/docs](https://stellarpaywall.onrender.com/docs) | Interactive OpenAPI 3.1 Swagger documentation |
+| **Alternative Docs (ReDoc)** | [https://stellarpaywall.onrender.com/redoc](https://stellarpaywall.onrender.com/redoc) | Clean ReDoc endpoint reference |
+| **Gateway Health Check** | [https://stellarpaywall.onrender.com/health](https://stellarpaywall.onrender.com/health) | Uptime health check endpoint (`{"status": "ok"}`) |
+| **Monetized Demo Endpoint** | [https://stellarpaywall.onrender.com/protected-resource](https://stellarpaywall.onrender.com/protected-resource) | Live HTTP 402 monetized resource |
 
 ---
 
-## ✨ Features
+## 🔄 Protocol Sequence Diagram
 
-- **HTTP 402 Standard**: Native Web standard payment challenges via `WWW-Authenticate` and `X-PayWall-*` headers.
-- **Near-Zero Transaction Fees**: Powered by Stellar (10 Stroops / 0.00001 XLM per payment operation).
-- **Sub-5-Second Settlement**: Instant on-chain confirmation via Stellar Horizon and Soroban RPC.
-- **Soroban Smart Contract Vault**: On-chain payment escrow & SEP-41 SAC token verification ([`contracts/paywall_vault`](contracts/paywall_vault)).
-- **Anti-Replay Protection**: Challenge UUID memo binding with SQLite/Redis atomic double-spend prevention and configurable TTL expiration.
-- **Turnkey Client SDKs**: Transparent auto-payment interceptors for Python and TypeScript.
-
----
-
-## 🏛️ System Architecture
-
-```mermaid
-graph TD
-    Client[Client / Autonomous AI Agent] -->|1. Initial Request| Gateway[StellarPayWall Gateway]
-    Gateway -->|2. 402 Payment Required + Challenge UUID| Client
-    Client -->|3. Sign & Submit Payment| Stellar[Stellar Horizon / Soroban RPC]
-    Client -->|4. Retry Request with X-PayWall-Tx-Hash| Gateway
-    Gateway -->|5. Check & Lock Nonce with TTL| Ledger[(Anti-Replay Nonce Ledger)]
-    Gateway -->|6. Verify Payment & Memo UUID| Stellar
-    Stellar -->|7. Confirm On-Chain Settlement| Gateway
-    Gateway -->|8. Mark Nonce Spent| Ledger
-    Gateway -->|9. Forward & Return 200 OK| Client
-```
-
----
-
-## 🔄 Protocol Flow
+The following sequence diagram illustrates the complete HTTP 402 challenge, on-chain settlement, verifier validation, and content authorization lifecycle:
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Client as Client / AI Agent
     participant Gateway as StellarPayWall Gateway
-    participant Ledger as Anti-Replay Ledger
-    participant Horizon as Stellar Horizon / Soroban
-    participant Origin as Protected Origin API
+    participant NonceDB as Anti-Replay Ledger
+    participant Stellar as Stellar / Soroban Network
+    participant Origin as Protected API Route
 
-    Client->>Gateway: GET /protected-resource
-    Gateway-->>Client: 402 Payment Required (Challenge UUID + Price)
-    
-    Note over Client: SDK signs Stellar transaction with Challenge UUID memo
-    Client->>Horizon: Submit signed transaction
-    Horizon-->>Client: Transaction Confirmed (tx_hash)
+    Client->>Gateway: GET /protected-resource (no credentials)
+    Gateway-->>Client: 402 Payment Required<br/>[WWW-Authenticate, X-PayWall-Challenge-UUID, X-PayWall-Amount]
 
-    Client->>Gateway: GET /protected-resource (X-PayWall-Tx-Hash)
-    Gateway->>Ledger: Check if tx_hash already spent or expired
-    Ledger-->>Gateway: Not spent (Valid)
-    Gateway->>Horizon: Verify amount, destination, memo UUID
-    Horizon-->>Gateway: Confirmed & Valid
-    Gateway->>Ledger: Mark tx_hash as spent (with TTL)
-    Gateway->>Origin: Forward request
-    Origin-->>Gateway: 200 OK (Response Payload)
-    Gateway-->>Client: 200 OK (Response Payload)
+    Note over Client: Client reads challenge UUID & amount,<br/>signs on-chain Stellar transaction with UUID memo
+
+    Client->>Stellar: Broadcast payment transaction (XLM or SAC USDC)
+    Stellar-->>Client: Transaction Confirmed (tx_hash)
+
+    Client->>Gateway: GET /protected-resource<br/>[X-PayWall-Tx-Hash: tx_hash, X-PayWall-Challenge-UUID: UUID]
+
+    Gateway->>NonceDB: Check if tx_hash is spent / acquire mutex lock
+    NonceDB-->>Gateway: Hash clean & unlocked
+
+    alt Stellar Native Payment
+        Gateway->>Stellar: Fetch Horizon transaction details
+        Stellar-->>Gateway: Status: success, amount, destination, memo
+    else Soroban SAC Payment
+        Gateway->>Stellar: RPC getTransaction(tx_hash)
+        Stellar-->>Gateway: Contract event logs (SEP-41 transfer / PaymentVerified)
+    end
+
+    Note over Gateway: Verifier confirms amount >= required,<br/>destination == merchant, memo == challenge UUID
+
+    Gateway->>NonceDB: Record verified tx_hash with TTL lock
+    NonceDB-->>Gateway: Committed
+
+    Gateway->>Origin: Dispatch authorized request
+    Origin-->>Gateway: Response payload
+    Gateway-->>Client: 200 OK + Resource Content
 ```
 
 ---
 
-## 📦 SDK Integration
+## 🏛 Architecture & Dual-Repo Split
 
-Client SDKs automatically intercept `402 Payment Required`, sign the Stellar transaction with the challenge UUID, and retry the request transparently against the live gateway.
+StellarPayWall is structured as a dual-repository split per the Stellar Wave Builder Maintainer Playbook:
 
-### Python
+1. **Smart Contracts Workspace**: [`HassanKorey/StellarPayWall-contract`](https://github.com/HassanKorey/StellarPayWall-contract)  
+   Pure Rust workspace containing the `paywall_vault` Soroban smart contract, SAC token escrow handlers, verification getters, and cargo test suite.
+2. **Application & Middleware Workspace**: [`HassanKorey/StellarPayWall-app`](https://github.com/HassanKorey/StellarPayWall-app)  
+   FastAPI HTTP 402 middleware, Next.js Merchant Dashboard, Python & TypeScript SDKs, MkDocs documentation portal, and Docker container configs.
 
+---
+
+## 📍 Deployed Contract Address & Explorer
+
+| Contract | Network | Address & Explorer Link |
+| :--- | :--- | :--- |
+| `paywall_vault` | Stellar Testnet | [`CA4L7T6R74G3T5F5V7V7RWWUHE2J76Y4WJ3L7C2WJ3L7C2WJ3L7C2WJ3`](https://stellar.expert/explorer/testnet/contract/CA4L7T6R74G3T5F5V7V7RWWUHE2J76Y4WJ3L7C2WJ3L7C2WJ3L7C2WJ3) |
+
+- **Compiled WASM SHA-256 Hash**: `744f4b889771e3e8581093d0e796656686e94c30aefcbffd646fed848fe4c25d`
+
+---
+
+## 📦 Client SDKs
+
+Client SDKs automatically intercept `402 Payment Required` responses, build and sign the Stellar transaction, and retry the request transparently.
+
+### Python SDK
 ```python
-from stellarpaywall_sdk import StellarPaywallClient
+from stellarpaywall_client import AsyncStellarPayWallClient
 
-client = StellarPaywallClient(
+client = AsyncStellarPayWallClient(
+    secret_key="S...",
     base_url="https://stellarpaywall.onrender.com",
-    secret_key="S...",  # Payer Stellar Secret Key
-    horizon_url="https://horizon-testnet.stellar.org"
 )
 
-# Automatically handles 402 challenge, signs transaction, and retries:
-response = client.get("/protected-resource")
+# Automatically negotiates 402 challenge and returns 200 OK payload:
+response = await client.get("/protected-resource")
 print(response.json())
 ```
 
-### TypeScript / JavaScript
-
+### TypeScript / Node.js SDK
 ```typescript
-import { StellarPaywallClient } from "stellarpaywall-sdk";
+import { StellarPayWallClient } from '@stellarpaywall/sdk';
+import { Keypair, Networks } from '@stellar/stellar-sdk';
 
-const client = new StellarPaywallClient({
-  baseUrl: "https://stellarpaywall.onrender.com",
-  secretKey: "S...",
-  horizonUrl: "https://horizon-testnet.stellar.org"
+const client = new StellarPayWallClient({
+  baseUrl: 'https://stellarpaywall.onrender.com',
+  networkPassphrase: Networks.TESTNET,
+  keypair: Keypair.fromSecret('S...'),
 });
 
-const res = await client.fetch("/protected-resource");
-const data = await res.json();
-console.log(data);
+const res = await client.get('/protected-resource');
+console.log(res.data);
 ```
 
 ---
 
-## 🔐 Soroban Smart Contract (`PaywallVault`)
+## 🧪 Testing & Code Quality
 
-Located in [`contracts/paywall_vault/`](contracts/paywall_vault/):
-
-- `initialize(admin, token)`: Sets contract administrator and payment asset address (e.g. SAC USDC or XLM).
-- `pay_for_resource(payer, request_id, amount)`: Transfers funds into vault, records payment by request UUID, and emits `PaymentVerified` event.
-- `claim_merchant_balance(merchant, amount)`: Allows merchant to withdraw accumulated earnings.
-- `get_payment_status(request_id)`: Queries payment status on-chain.
-
----
-
-## 📡 API Reference & Headers
-
-### HTTP 402 Challenge Headers
-
-| Header | Description | Example |
-| :--- | :--- | :--- |
-| `WWW-Authenticate` | Standard challenge string | `Stellar asset="XLM", amount="0.05", challenge="..."` |
-| `X-PayWall-Amount` | Required payment amount | `0.05` |
-| `X-PayWall-Asset` | Required asset code | `XLM` |
-| `X-PayWall-Destination`| Merchant public address | `G...` |
-| `X-PayWall-Challenge-UUID` | Unique challenge UUID | `234de163-1869-4b24-8d90-45e171d9e66c` |
-| `X-PayWall-Expires-In` | Challenge TTL in seconds | `300` |
-
-### Payment Submission Headers
-
-| Header | Description |
-| :--- | :--- |
-| `X-PayWall-Tx-Hash` | Stellar transaction hash paying the merchant |
-| `X-PayWall-Challenge-UUID` | Challenge UUID matching the transaction memo |
-
----
-
-## 🛠️ Local Development & Testing
-
-For local development or running the test suites:
-
-### 1. Environment Setup
+StellarPayWall enforces 100% test passing, strict linting, and security vector verification:
 
 ```bash
-git clone https://github.com/HassanKorey/StellarPayWall.git
-cd StellarPayWall
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-### 2. Run Local Gateway Server
-
-```bash
-uvicorn stellarpaywall.main:app --reload
-```
-
-### 3. Run Test Suite
-
-```bash
-# Python Gateway & Security Tests
+# Run pytest security test suite
 pytest tests/ -v
 
-# Soroban Smart Contract Tests
-cd contracts/paywall_vault && cargo test && cd ../..
+# Run cargo unit tests for Soroban paywall_vault
+cargo test --manifest-path contracts/paywall_vault/Cargo.toml
+
+# Fast linting and format checking with Ruff
+ruff check .
 ```
 
 ---
 
-## 👥 Governance & Contributing
+## 🤝 Contributors
 
-- Multi-maintainer review workflow and maintainer responsibilities are documented in [MAINTAINERS.md](MAINTAINERS.md).
-- Contributions are welcome! Please review [CONTRIBUTING.md](CONTRIBUTING.md) for development workflows and guidelines.
+Thank you to all the open-source contributors powering the Stellar micropayment ecosystem!
+
+[![Contributors](https://contrib.rocks/preview?repo=HassanKorey/StellarPayWall-app)](https://github.com/HassanKorey/StellarPayWall-app/graphs/contributors)
+
+---
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the terms of the [MIT License](LICENSE).
