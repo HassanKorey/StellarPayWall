@@ -1,0 +1,62 @@
+site_name: StellarPayWall Documentation
+site_description: High-Throughput HTTP 402 Stellar & Soroban Micropayment Gateway
+site_author: Hassan Akorede (EDUN)
+site_url: https://HassanKorey.github.io/StellarPayWall-app/
+repo_name: HassanKorey/StellarPayWall-app
+repo_url: https://github.com/HassanKorey/StellarPayWall-app
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: blue
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: blue
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - pymdownx.arithmatex:
+      generic: true
+  - attr_list
+  - md_in_html
+  - tables
+
+nav:
+  - Overview: index.md
+  - Architecture: architecture.md
+  - HTTP 402 Protocol: http-402-protocol.md
+  - SDKs:
+      - Python SDK: sdks/python.md
+      - TypeScript SDK: sdks/typescript.md
+  - API Reference: api-reference.md
